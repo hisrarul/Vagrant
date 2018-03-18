@@ -24,9 +24,6 @@ Vagrant.configure("2") do |config|
   # accessing "localhost:8080" will access port 80 on the guest machine.
   # NOTE: This will enable public access to the opened port
   # config.vm.network "forwarded_port", guest: 80, host: 8080
-  #
-  # Configure hostname
-  config.vm.hostname = "puppet.master.node"
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine and only allow access
@@ -40,7 +37,7 @@ Vagrant.configure("2") do |config|
   # Create a public network, which generally matched to bridged network.
   # Bridged networks make the machine appear as another physical device on
   # your network.
-    config.vm.network "public_network"
+  # config.vm.network "public_network"
 
   # Share an additional folder to the guest VM. The first argument is
   # the path on the host to the actual folder. The second argument is
@@ -52,29 +49,93 @@ Vagrant.configure("2") do |config|
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-    config.vm.provider "virtualbox" do |vb|
+  # config.vm.provider "virtualbox" do |vb|
       # Display the VirtualBox GUI when booting the machine
-      vb.gui = true
+  #   vb.gui = true
   #
   #   # Customize the amount of memory on the VM:
-      vb.memory = "1024"
+  #   vb.memory = "2048"
 
       # Define vb name
-      vb.name = "puppet"
+  #   vb.name = "puppet"
+
+  # end
+  
+  ###### ELK Server with puppet######
+  
+  config.vm.define "elastic" do |elastic|
+    elastic.vm.hostname = "elastic"
+    elastic.vm.network "public_network"
+    elastic.vm.provider "virtualbox" do |vb|
+      # Display the VirtualBox GUI when booting the machine
+      vb.gui = false
+  #
+  #   # Customize the amount of memory on the VM:
+      vb.memory = "2048"
+
+      # Define vb name
+      vb.name = "elastic"
 
     end
+    elastic.vm.provision "shell", inline: <<-SHELL
+      yum install wget -y
+      wget https://yum.puppetlabs.com/puppet5/puppet5-release-el-7.noarch.rpm -P /tmp
+      yum install /tmp/puppet5-release-el-7.noarch.rpm -y
+    SHELL
+  end
+    
+  ###### Logstash Server ###### 
+  config.vm.define "logstash" do |logstash|
+    logstash.vm.hostname = "logstash"
+    logstash.vm.network "public_network"
+    logstash.vm.provider "virtualbox" do |vb|
+      # Display the VirtualBox GUI when booting the machine
+      vb.gui = false
   #
+  #   # Customize the amount of memory on the VM:
+      vb.memory = "768"
+
+      # Define vb name
+      vb.name = "logstash"
+
+    end
+    logstash.vm.provision "shell", inline: <<-SHELL
+      yum install wget -y
+      yum install httpd -y
+      systemctl restart httpd
+      systemctl enable httpd
+    SHELL
+  end
+
+  ###### Kibana Server ###### 
+  config.vm.define "kibana" do |kibana|
+    kibana.vm.hostname = "kibana"
+    kibana.vm.network "public_network"
+    kibana.vm.provider "virtualbox" do |vb|
+      # Display the VirtualBox GUI when booting the machine
+      vb.gui = false
+  #
+  #   # Customize the amount of memory on the VM:
+      vb.memory = "768"
+
+      # Define vb name
+      vb.name = "kibana"
+
+    end
+  end
+
+    #
   # View the documentation for the provider you are using for more
   # information on available options.
 
   # Enable provisioning with a shell script. Additional provisioners such as
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
-    config.vm.provision "shell", inline: <<-SHELL
+  # config.vm.provision "shell", inline: <<-SHELL
   #   apt-get update
   #   apt-get install -y apache2
-      yum install wget -y
-      wget https://yum.puppetlabs.com/puppet5/puppet5-release-el-7.noarch.rpm -P /tmp
-      yum install /tmp/puppet5-release-el-7.noarch.rpm -y
-    SHELL
+  #   yum install wget -y
+  #   wget https://yum.puppetlabs.com/puppet5/puppet5-release-el-7.noarch.rpm -P /tmp
+  #   yum install /tmp/puppet5-release-el-7.noarch.rpm -y
+  # SHELL
 end
